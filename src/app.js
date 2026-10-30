@@ -168,6 +168,18 @@ function calculate(announce = false) {
           samples: 2,
         });
   $("fastest-time").textContent = clock(fastest.travel_time_seconds);
+  const direct =
+    state.mode === "straight"
+      ? route
+      : solveRoute({
+          origin: state.origin,
+          destination: state.destination,
+          mode: "straight",
+          samples: 2,
+        });
+  $("fastest-distance").textContent =
+    `${number(fastest.tunnel_distance_km)} km`;
+  $("direct-distance").textContent = `${number(direct.tunnel_distance_km)} km`;
   $("straight-time").textContent = clock(route.straight_tunnel_time_seconds);
   $("compare-fast").style.width =
     `${route.straight_tunnel_time_seconds ? (fastest.travel_time_seconds / route.straight_tunnel_time_seconds) * 100 : 0}%`;
@@ -175,10 +187,13 @@ function calculate(announce = false) {
   $("max-depth").textContent = number(route.max_depth_km);
   $("max-speed").textContent = number(route.max_speed_km_s, 2);
   $("surface-distance").textContent = number(route.surface_distance_km);
+  const shorter = fastest.tunnel_distance_km - direct.tunnel_distance_km;
   $("distance-note").textContent =
-    state.mode === "fastest"
-      ? "Following a gravity-optimized curve"
-      : "The direct chord between your places";
+    route.travel_time_seconds === 0
+      ? "Departure and arrival are the same point"
+      : Math.abs(fastest.central_angle_degrees - 180) < 1e-8
+        ? "Both paths coincide through Earth's center"
+        : `Direct path: ${number(direct.tunnel_distance_km)} km · ${number(shorter)} km shorter`;
   $("layer-note").textContent =
     route.max_depth_km > 5150
       ? "Reaching the inner core"
@@ -195,6 +210,9 @@ function calculate(announce = false) {
   $("api-request").textContent = `curl "http://localhost:4173${request}"`;
   scene?.setRoute(route);
   if (scene) {
+    if (route.mode === "straight") scene.setDirect(true);
+    $("direct-button").setAttribute("aria-pressed", String(scene.showDirect));
+    $("direct-button").disabled = route.mode === "straight";
     scene.playing = route.travel_time_seconds > 0 && !scene.reducedMotion;
     $("camera-button").setAttribute("aria-pressed", "false");
   }
@@ -401,6 +419,11 @@ $("surface-button").addEventListener("click", () => {
   $("surface-button").setAttribute("aria-pressed", String(visible));
   scene?.setSurface(visible);
 });
+$("direct-button").addEventListener("click", () => {
+  const visible = $("direct-button").getAttribute("aria-pressed") !== "true";
+  $("direct-button").setAttribute("aria-pressed", String(visible));
+  scene?.setDirect(visible);
+});
 $("reset-view").addEventListener("click", () => {
   scene?.resetView();
   $("camera-button").setAttribute("aria-pressed", "false");
@@ -522,6 +545,7 @@ class SectionFallback {
     this.reducedMotion = !this.playing;
     this.playbackSeconds = 22;
     this.showSurface = true;
+    this.showDirect = true;
     this.zoomScale = 1;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
@@ -551,6 +575,10 @@ class SectionFallback {
   setCutaway() {}
   setSurface(v) {
     this.showSurface = v;
+  }
+  setDirect(value) {
+    this.showDirect = value;
+    this.draw();
   }
   resetView() {
     this.zoomScale = 1;
@@ -600,8 +628,8 @@ class SectionFallback {
       c.stroke();
       c.setLineDash([]);
     }
-    const project = (f) => {
-      const p = pointAt(this.frame, f, this.route.mode);
+    const project = (f, mode = this.route.mode) => {
+      const p = pointAt(this.frame, f, mode);
       const x = p.reduce((s, v, i) => s + v * this.frame.a[i], 0),
         y = p.reduce((s, v, i) => s + v * this.frame.tangent[i], 0);
       const a = -Math.PI / 2 - theta / 2;
@@ -612,7 +640,7 @@ class SectionFallback {
     };
     c.beginPath();
     for (let i = 0; i <= 200; i++) {
-      const [x, y] = project(i / 200);
+      const [x, y] = project(i / 200, "fastest");
       i ? c.lineTo(x, y) : c.moveTo(x, y);
     }
     c.strokeStyle = "#c0ff87";
@@ -620,6 +648,18 @@ class SectionFallback {
     c.shadowColor = "#c0ff87";
     c.shadowBlur = 12;
     c.stroke();
+    if (this.showDirect) {
+      const a = project(0, "straight"),
+        b = project(1, "straight");
+      c.beginPath();
+      c.moveTo(...a);
+      c.lineTo(...b);
+      c.strokeStyle = "#7bdbff";
+      c.lineWidth = 2;
+      c.shadowColor = "#7bdbff";
+      c.shadowBlur = 10;
+      c.stroke();
+    }
     const [x, y] = project(Math.min(1, this.progress));
     c.beginPath();
     c.arc(x, y, 4, 0, Math.PI * 2);
@@ -681,7 +721,7 @@ try {
   document.querySelector(".orbit-hint").textContent = "2D cutaway view";
   $("globe-stage").setAttribute(
     "aria-label",
-    "2D Earth cross-section with an animated gravity tunnel.",
+    "2D Earth cross-section comparing a curved gravity tunnel and a straight direct path.",
   );
 }
 calculate();
@@ -696,6 +736,7 @@ Object.defineProperty(window, "throughJourney", {
     progress: Math.min(1, scene?.progress ?? 0),
     playing: scene?.playing ?? false,
     renderer: scene instanceof EarthScene ? "webgl" : "2d",
+    showDirect: scene?.showDirect ?? false,
     travel_time_seconds: route.travel_time_seconds,
   }),
 });

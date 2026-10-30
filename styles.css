@@ -517,12 +517,22 @@ h1 span {
   font-weight: 400;
   color: #cde8c0;
 }
+.comparison-distance {
+  display: block;
+  margin-top: 4px;
+  font: 8px var(--mono);
+  color: #92a89b;
+  font-variant-numeric: tabular-nums;
+}
 .comparison .comparison-secondary {
   margin-top: 13px !important;
-  color: #708690 !important;
+  color: #a1cee0 !important;
 }
 .comparison-secondary strong {
-  color: #8a9ba4;
+  color: #7bdbff;
+}
+.comparison-secondary .comparison-distance {
+  color: #86b4c6;
 }
 .compare-track {
   height: 3px;
@@ -544,7 +554,7 @@ h1 span {
 }
 .compare-track.secondary i {
   width: 100%;
-  background: #4d6572;
+  background: linear-gradient(90deg, #3b748e, #7bdbff);
 }
 .presets {
   margin-top: 23px;
@@ -841,8 +851,9 @@ h1 span {
 }
 .legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
+  gap: 4px 14px;
   font-size: 8px;
   color: #a2b8c0;
 }
@@ -858,6 +869,24 @@ h1 span {
   background: var(--green);
   box-shadow: 0 0 7px #b0ff8060;
   display: block;
+}
+.legend-direct {
+  background: none;
+  color: #a1d9ed;
+  font-size: inherit;
+  padding: 6px 0;
+}
+.legend-direct > i {
+  width: 18px;
+  height: 2px;
+  background: #7bdbff;
+  box-shadow: 0 0 7px #7bdbff60;
+}
+.legend-direct[aria-pressed="false"] {
+  opacity: 0.4;
+}
+.legend-direct:disabled {
+  opacity: 1;
 }
 .legend-surface {
   background: none;
@@ -2936,4 +2965,22 @@ pre {
 button:disabled {
   cursor: default;
   opacity: 0.4;
+}
+@media (max-width: 700px) {
+  .legend {
+    gap: 2px 12px;
+  }
+  .legend-direct {
+    min-height: 32px;
+  }
+  .legend-direct > i {
+    width: 15px;
+  }
+  .comparison-distance {
+    font-size: 8px;
+    line-height: 1.4;
+  }
+  .visual-bottom .orbit-hint {
+    display: none;
+  }
 }

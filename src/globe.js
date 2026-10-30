@@ -23,6 +23,7 @@ export class EarthScene {
     this.playbackSeconds = 22;
     this.cutaway = true;
     this.showSurface = true;
+    this.showDirect = true;
     this.autoOrbit = false;
     this.flyThrough = false;
     this.reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -42,7 +43,7 @@ export class EarthScene {
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "Interactive 3D Earth with a gravity-tunnel route. Drag to orbit and scroll to zoom.",
+      "Interactive 3D Earth comparing a curved gravity tunnel and a straight direct path. Drag to orbit and scroll to zoom.",
     );
     this.renderer.domElement.setAttribute("role", "img");
     container.prepend(this.renderer.domElement);
@@ -297,8 +298,11 @@ export class EarthScene {
       normal,
     );
     this.section.position.copy(normal).multiplyScalar(0.003);
-    const points = route.path.map((p) =>
-      new THREE.Vector3(p.x, p.y, p.z).addScaledVector(normal, 0.014),
+    // Keep both geometries visible; the selected mode determines capsule motion.
+    const points = Array.from({ length: route.path.length }, (_, i) =>
+      v3(
+        pointAt(this.frame, i / (route.path.length - 1), "fastest"),
+      ).addScaledVector(normal, 0.014),
     );
     const curve = new THREE.CatmullRomCurve3(points);
     const tunnel = new THREE.Mesh(
@@ -346,27 +350,38 @@ export class EarthScene {
     this.surfaceLine.renderOrder = 8;
     this.surfaceLine.visible = this.showSurface;
     this.routeGroup.add(this.surfaceLine);
-    const chordPoints = Array.from({ length: 101 }, (_, i) =>
-      v3(pointAt(this.frame, i / 100, "straight")).addScaledVector(
-        normal,
-        0.012,
-      ),
+    const chord = new THREE.LineCurve3(
+      v3(this.frame.a).addScaledVector(normal, 0.014),
+      v3(this.frame.b).addScaledVector(normal, 0.014),
     );
-    this.chordLine = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(chordPoints),
-      new THREE.LineDashedMaterial({
-        color: 0x6d92a0,
-        dashSize: 0.012,
-        gapSize: 0.012,
-        transparent: true,
-        opacity: 0.44,
+    this.directPath = new THREE.Group();
+    const directLine = new THREE.Mesh(
+      new THREE.TubeGeometry(chord, 1, 0.0038, 8, false),
+      new THREE.MeshBasicMaterial({
+        color: 0x7bdbff,
         depthTest: false,
+        depthWrite: false,
       }),
     );
-    this.chordLine.computeLineDistances();
-    this.chordLine.renderOrder = 8;
-    this.chordLine.visible = route.mode === "fastest";
-    this.routeGroup.add(this.chordLine);
+    directLine.renderOrder = 11;
+    const directGlow = new THREE.Mesh(
+      new THREE.TubeGeometry(chord, 1, 0.011, 8, false),
+      new THREE.MeshBasicMaterial({
+        color: 0x7bdbff,
+        transparent: true,
+        opacity: 0.16,
+        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        depthWrite: false,
+      }),
+    );
+    directGlow.renderOrder = 9;
+    this.directPath.add(directLine, directGlow);
+    this.directPath.visible = this.showDirect;
+    this.routeGroup.add(this.directPath);
+    this.trail.material.color.setHex(
+      route.mode === "straight" ? 0x9ce7ff : 0xc9ffb0,
+    );
     this.markerPositions = [points[0], points[points.length - 1]];
     this.markerPositions.forEach((p, i) => {
       const m = new THREE.Mesh(
@@ -427,6 +442,10 @@ export class EarthScene {
   setSurface(value) {
     this.showSurface = value;
     if (this.surfaceLine) this.surfaceLine.visible = value;
+  }
+  setDirect(value) {
+    this.showDirect = value;
+    if (this.directPath) this.directPath.visible = value;
   }
   setProgress(value) {
     this.progress = Math.max(0, Math.min(1, value));

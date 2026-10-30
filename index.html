@@ -226,12 +226,22 @@
             </div>
             <div class="comparison">
               <div>
-                <span>Optimized tunnel</span
+                <span
+                  >Gravity tunnel<small
+                    class="comparison-distance"
+                    id="fastest-distance"
+                    >— km</small
+                  ></span
                 ><strong id="fastest-time">35:20</strong>
               </div>
               <div class="compare-track"><i id="compare-fast"></i></div>
               <div class="comparison-secondary">
-                <span>Straight gravity tunnel</span
+                <span
+                  >Direct path<small
+                    class="comparison-distance"
+                    id="direct-distance"
+                    >— km</small
+                  ></span
                 ><strong id="straight-time">42:12</strong>
               </div>
               <div class="compare-track secondary"><i></i></div>
@@ -324,6 +334,14 @@
           <div class="visual-bottom">
             <div class="legend">
               <span><i class="legend-tunnel"></i>Gravity tunnel</span
+              ><button
+                class="legend-direct"
+                id="direct-button"
+                aria-pressed="true"
+                aria-label="Show direct straight path through Earth"
+                title="The shortest straight line between your places"
+              >
+                <i></i>Direct path</button
               ><button
                 class="legend-surface"
                 id="surface-button"

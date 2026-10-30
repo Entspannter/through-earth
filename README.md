@@ -31,6 +31,7 @@ Open `http://<your-computer-LAN-IP>:4173` on the phone. The server normally bind
 - Choose departure and arrival from 37 places, or enter **any latitude,longitude**.
 - Launch the journey, pause, scrub, restart, and change playback speed.
 - Switch between the cutaway and globe views; hide/show the surface reference arc.
+- Compare the **lime gravity curve** and **cyan direct chord** on the same Earth, with both distances and gravity-powered travel times shown. The direct path is visible by default and can be toggled from the legend.
 - Follow the capsule with the tracking camera, or expand the explorer.
 - Compare the fastest curved tunnel with a straight gravity tunnel.
 - Read the model assumptions and run an API example inside the app.
