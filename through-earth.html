@@ -2981,6 +2981,23 @@ button:disabled {
   cursor: default;
   opacity: 0.4;
 }
+.quiet-note {
+  margin: 0;
+  padding: 0 12px max(24px, env(safe-area-inset-bottom));
+  color: #bed2c9;
+  opacity: 0.18;
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.15px;
+  text-align: center;
+  transition: opacity 0.35s ease;
+}
+.quiet-note:hover,
+.quiet-note:focus,
+.quiet-note:active {
+  opacity: 0.75;
+  outline: none;
+}
 @media (max-width: 700px) {
   .legend {
     gap: 2px 12px;
@@ -3467,6 +3484,9 @@ button:disabled {
           Build with the API <svg class="icon"><use href="#i-arrow" /></svg>
         </button>
       </footer>
+      <p class="quiet-note" tabindex="0">
+        Always finding the shortest way from Y to L
+      </p>
     </main>
 
     <dialog id="location-dialog" class="location-dialog">
