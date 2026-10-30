@@ -2,6 +2,8 @@
 
 A cinematic gravity-tunnel explorer. The default journey is **Cape Town → Zurich**.
 
+**[Open the live app](https://entspannter.github.io/through-earth/)** · [GitHub repository](https://github.com/Entspannter/through-earth)
+
 The interface is plain **HTML, CSS, and a locally bundled JavaScript file**. It works offline by opening `index.html`, and can be hosted from a GitHub Pages repository subfolder. It uses no CDN, online geocoder, analytics, API key, or external font request.
 
 ## Run it
