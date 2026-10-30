@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+# Bundled third-party GLSL retains whitespace inside shader strings.
+app.js linguist-generated=true -whitespace
+through-earth.html linguist-generated=true -whitespace
+public/*.jpg -text

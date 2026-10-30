@@ -1,0 +1,297 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Through Earth API",
+    "version": "1.0.0",
+    "description": "Exact gravity-tunnel routes for an ideal uniform-density, spherical, non-rotating Earth. All routes start and end at rest in a frictionless evacuated tunnel. This is an educational model, not an engineering feasibility calculation. GitHub Pages runs the browser API; the HTTP endpoints require the included Node server."
+  },
+  "servers": [
+    { "url": "http://localhost:4173", "description": "Local Node server" }
+  ],
+  "paths": {
+    "/api/v1/route": {
+      "get": {
+        "operationId": "getRoute",
+        "summary": "Calculate a gravity-tunnel route",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "description": "City ID or latitude,longitude",
+            "schema": { "type": "string" },
+            "example": "cape-town"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "description": "City ID or latitude,longitude",
+            "schema": { "type": "string" },
+            "example": "zurich"
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["fastest", "straight"],
+              "default": "fastest"
+            }
+          },
+          {
+            "name": "samples",
+            "in": "query",
+            "description": "Uniform-time samples including both endpoints",
+            "schema": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 1025,
+              "default": 241
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calculated route",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Route" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadInput" }
+        }
+      },
+      "post": {
+        "operationId": "postRoute",
+        "summary": "Calculate using coordinate objects",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RouteInput" },
+              "example": {
+                "origin": {
+                  "lat": -33.9249,
+                  "lon": 18.4241,
+                  "name": "Cape Town"
+                },
+                "destination": {
+                  "lat": 47.3769,
+                  "lon": 8.5417,
+                  "name": "Zurich"
+                },
+                "mode": "fastest",
+                "samples": 241
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Calculated route",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Route" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadInput" },
+          "415": { "description": "Content-Type must be application/json" }
+        }
+      }
+    },
+    "/api/v1/locations": {
+      "get": {
+        "operationId": "searchLocations",
+        "summary": "Search the built-in city catalogue",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 200 },
+            "example": "Zurich"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "locations": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Point" },
+                          {
+                            "type": "object",
+                            "required": ["id", "name", "country", "code"],
+                            "properties": {
+                              "id": { "type": "string" },
+                              "country": { "type": "string" },
+                              "code": { "type": "string" }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Check API readiness",
+        "responses": {
+          "200": {
+            "description": "API is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "version", "model"],
+                  "properties": {
+                    "status": { "const": "ok" },
+                    "version": { "type": "string" },
+                    "model": { "const": "uniform-density-v1" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadInput": {
+        "description": "Invalid coordinates, mode, samples or request body",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["error"],
+              "properties": { "error": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Point": {
+        "type": "object",
+        "required": ["lat", "lon"],
+        "properties": {
+          "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+          "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+          "name": { "type": "string", "maxLength": 120 }
+        }
+      },
+      "RouteInput": {
+        "type": "object",
+        "required": ["origin", "destination"],
+        "properties": {
+          "origin": { "$ref": "#/components/schemas/Point" },
+          "destination": { "$ref": "#/components/schemas/Point" },
+          "mode": { "enum": ["fastest", "straight"], "default": "fastest" },
+          "samples": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 1025,
+            "default": 241
+          }
+        }
+      },
+      "PathSample": {
+        "type": "object",
+        "required": [
+          "fraction",
+          "elapsed_seconds",
+          "x",
+          "y",
+          "z",
+          "depth_km",
+          "speed_km_s"
+        ],
+        "properties": {
+          "fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+          "elapsed_seconds": { "type": "number", "minimum": 0 },
+          "x": {
+            "type": "number",
+            "description": "Earth-radius units; x axis through 0N,0E"
+          },
+          "y": {
+            "type": "number",
+            "description": "Earth-radius units; positive north"
+          },
+          "z": {
+            "type": "number",
+            "description": "Earth-radius units; positive toward 0N,90W"
+          },
+          "depth_km": { "type": "number", "minimum": 0 },
+          "speed_km_s": { "type": "number", "minimum": 0 }
+        }
+      },
+      "Route": {
+        "type": "object",
+        "required": [
+          "origin",
+          "destination",
+          "mode",
+          "model",
+          "travel_time_seconds",
+          "tunnel_distance_km",
+          "surface_distance_km",
+          "max_depth_km",
+          "max_speed_km_s",
+          "path"
+        ],
+        "properties": {
+          "origin": { "$ref": "#/components/schemas/Point" },
+          "destination": { "$ref": "#/components/schemas/Point" },
+          "mode": { "enum": ["fastest", "straight"] },
+          "model": {
+            "type": "object",
+            "properties": {
+              "id": { "const": "uniform-density-v1" },
+              "radius_km": { "const": 6371 },
+              "surface_gravity_m_s2": { "const": 9.80665 },
+              "assumptions": { "type": "array", "items": { "type": "string" } },
+              "reference": { "type": "string", "format": "uri" }
+            }
+          },
+          "central_angle_degrees": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 180
+          },
+          "travel_time_seconds": { "type": "number", "minimum": 0 },
+          "tunnel_distance_km": { "type": "number", "minimum": 0 },
+          "surface_distance_km": { "type": "number", "minimum": 0 },
+          "max_depth_km": { "type": "number", "minimum": 0, "maximum": 6371 },
+          "max_speed_km_s": { "type": "number", "minimum": 0 },
+          "straight_tunnel_time_seconds": { "type": "number", "minimum": 0 },
+          "savings_vs_straight_seconds": { "type": "number", "minimum": 0 },
+          "path_coordinate_system": { "type": "string" },
+          "path_sampling": { "type": "string" },
+          "path": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 1025,
+            "items": { "$ref": "#/components/schemas/PathSample" }
+          }
+        }
+      }
+    }
+  }
+}
